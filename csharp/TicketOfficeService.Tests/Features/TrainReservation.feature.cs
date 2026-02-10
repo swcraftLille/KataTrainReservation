@@ -24,8 +24,8 @@ namespace TicketOfficeService.Tests.Features
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en"), "Features", "Train Reservation", "    As a railway operator\r\n    I want to reserve seats on trains\r\n    So that cus" +
-                "tomers can book their tickets online with optimal seat allocation", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en"), "Features", "Train Reservation", "    As a railway operator\n    I want to reserve seats on trains\n    So that custo" +
+                "mers can book their tickets online with optimal seat allocation", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
         
         private global::Xunit.Abstractions.ITestOutputHelper _testOutputHelper;
         

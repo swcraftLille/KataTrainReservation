@@ -22,6 +22,6 @@ public class TestHooks
     [AfterScenario]
     public void AfterScenario()
     {
-        _context.Reset();
+        _context.Dispose();
     }
 }

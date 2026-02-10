@@ -1,120 +1,145 @@
-using FluentAssertions;
-using Reqnroll;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Reqnroll;
 using TicketOfficeService.Tests.Support;
-using TicketOfficeService.Tests.TestDoubles;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace TicketOfficeService.Tests.StepDefinitions;
 
 [Binding]
-public class TrainReservationStepDefinitions
+public class TrainReservationStepDefinitions(TestContext context)
 {
-    private readonly TestContext _context;
-    private TicketOffice _ticketOffice = null!;
-    private Reservation _reservation = null!;
+    private string _responseJson = string.Empty;
     private string _trainId = string.Empty;
     private int _requestedSeats;
 
-    public TrainReservationStepDefinitions(TestContext context)
-    {
-        _context = context;
-    }
-    
     [Given(@"the booking reference service is available")]
     public void GivenTheBookingReferenceServiceIsAvailable()
     {
-        // Service is already available in TestContext
+        context.BookingReferenceServiceMock
+            .Given(Request.Create().WithPath("/booking_reference").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("75bcd15"));
     }
 
     [Given(@"the train data service is available")]
     public void GivenTheTrainDataServiceIsAvailable()
     {
-        // Service is already available in TestContext
+        context.TrainDataServiceMock
+            .Given(Request.Create().WithPath("/reserve").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{}"));
     }
 
     [Given(@"a train ""([^""]*)"" with the following configuration:")]
     public void GivenATrainWithTheFollowingConfiguration(string trainId, Table table)
     {
         _trainId = trainId;
-        var coaches = new List<CoachTestConfig>();
-        
+
+        var seats = new Dictionary<string, object>();
+
         foreach (var row in table.Rows)
         {
             var coach = row["Coach"];
             var totalSeats = int.Parse(row["Total Seats"]);
             var reservedSeats = int.Parse(row["Reserved Seats"]);
-            
-            coaches.Add(new CoachTestConfig(coach, totalSeats, reservedSeats));
+
+            for (int i = 1; i <= totalSeats; i++)
+            {
+                var seatId = $"{i}{coach}";
+                var bookingRef = i <= reservedSeats ? "existing_booking" : "";
+                seats[seatId] = new { booking_reference = bookingRef, seat_number = i.ToString(), coach };
+            }
         }
-        
-        _context.TrainDataService.ConfigureTrainFromTestData(trainId, coaches);
+
+        var trainJson = JsonSerializer.Serialize(new { seats });
+
+        context.TrainDataServiceMock
+            .Given(Request.Create().WithPath($"/data_for_train/{trainId}").UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(trainJson));
     }
 
     [When(@"I request to reserve (.*) seats on train ""([^""]*)""")]
-    public void WhenIRequestToReserveSeatsOnTrain(int seatCount, string trainId)
+    public async Task WhenIRequestToReserveSeatsOnTrain(int seatCount, string trainId)
     {
         _requestedSeats = seatCount;
         _trainId = trainId;
-        
-        _ticketOffice = new TicketOffice(
-            _context.BookingReferenceService, 
-            _context.TrainDataService
-        );
-        
-        var request = new ReservationRequest(trainId, seatCount);
-        
-        try
+
+        var response = await context.Client.PostAsJsonAsync("/reserve", new
         {
-            _reservation = _ticketOffice.MakeReservation(request);
-        }
-        catch (NotImplementedException)
-        {
-            throw;
-        }
+            train_id = trainId,
+            seat_count = seatCount
+        });
+
+        response.EnsureSuccessStatusCode();
+        _responseJson = await response.Content.ReadAsStringAsync();
     }
 
     [Then(@"the reservation should be successful")]
     public void ThenTheReservationShouldBeSuccessful()
     {
-        _reservation.Should().NotBeNull();
-        _reservation.Seats.Should().NotBeEmpty();
-        _reservation.Seats.Should().HaveCount(_requestedSeats);
-        _reservation.BookingId.Should().NotBeNullOrEmpty();
+        _responseJson.Should().NotBeNullOrEmpty();
+        
+        var json = JsonDocument.Parse(_responseJson).RootElement;
+
+        json.GetProperty("seats").GetArrayLength().Should().Be(_requestedSeats);
+        json.GetProperty("bookingId").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Then(@"all (.*) seats should be in the same coach")]
     public void ThenAllSeatsShouldBeInTheSameCoach(int seatCount)
     {
-        _reservation.Seats.Should().HaveCount(seatCount);
-        var coaches = _reservation.Seats.Select(s => s.Coach).Distinct();
+        _responseJson.Should().NotBeNullOrEmpty();
+        
+        var json = JsonDocument.Parse(_responseJson).RootElement;
+        var seats = json.GetProperty("seats").EnumerateArray().ToList();
+
+        seats.Should().HaveCount(seatCount);
+
+        var coaches = seats.Select(s => s.GetProperty("coach").GetString()).Distinct();
         coaches.Should().HaveCount(1, "all seats must be in the same coach");
     }
 
     [Then(@"the reservation should have a booking reference")]
     public void ThenTheReservationShouldHaveABookingReference()
     {
-        _reservation.BookingId.Should().NotBeNullOrEmpty();
+        _responseJson.Should().NotBeNullOrEmpty();
+        
+        var json = JsonDocument.Parse(_responseJson).RootElement;
+        json.GetProperty("bookingId").GetString().Should().NotBeNullOrEmpty();
     }
 
     [Then(@"the train should be reserved with those seats")]
     public void ThenTheTrainShouldBeReservedWithThoseSeats()
     {
-        var trainSeats = _context.TrainDataService.GetTrainSeats(_trainId);
-        
-        var reservedSeats = trainSeats.Values
-            .Where(s => s.BookingReference == _reservation.BookingId)
+        var reserveRequests = context.TrainDataServiceMock.LogEntries
+            .Where(e => e.RequestMessage is { Path: "/reserve", Method: "POST" })
             .ToList();
-        
-        reservedSeats.Should().HaveCount(_requestedSeats, 
-            "the train data service should have reserved the correct number of seats");
-        
-        foreach (var seat in _reservation.Seats)
-        {
-            var seatId = $"{seat.SeatNumber}{seat.Coach}";
-            trainSeats.Should().ContainKey(seatId);
-            trainSeats[seatId].BookingReference.Should().Be(_reservation.BookingId);
-        }
+
+        reserveRequests.Should().HaveCount(1, "TicketOffice should have called POST /reserve exactly once");
+
+        var body = JsonDocument.Parse(reserveRequests[0].RequestMessage.Body!).RootElement;
+        var response = JsonDocument.Parse(_responseJson).RootElement;
+
+        body.GetProperty("train_id").GetString().Should().Be(_trainId);
+        body.GetProperty("booking_reference").GetString().Should().Be(
+            response.GetProperty("bookingId").GetString());
+
+        var reservedSeats = body.GetProperty("seats").EnumerateArray()
+            .Select(s => s.GetString())
+            .ToList();
+
+        var responseSeats = response.GetProperty("seats").EnumerateArray()
+            .Select(s => $"{s.GetProperty("seatNumber").GetInt32()}{s.GetProperty("coach").GetString()}")
+            .ToList();
+
+        reservedSeats.Should().HaveCount(_requestedSeats);
+        reservedSeats.Should().BeEquivalentTo(responseSeats);
     }
 }
