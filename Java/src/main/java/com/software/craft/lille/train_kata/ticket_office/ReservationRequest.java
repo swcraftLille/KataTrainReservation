@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata;
+package com.software.craft.lille.train_kata.ticket_office;
 
 public class ReservationRequest {
 	public final String trainId;
