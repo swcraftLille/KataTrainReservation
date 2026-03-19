@@ -1,3 +1,5 @@
+package com.software.craft.lille.train_kata;
+
 import java.util.List;
 
 public class Reservation {

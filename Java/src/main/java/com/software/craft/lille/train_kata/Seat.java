@@ -1,3 +1,4 @@
+package com.software.craft.lille.train_kata;
 
 public class Seat {
     public final String coach;

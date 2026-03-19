@@ -1,7 +1,9 @@
+package com.software.craft.lille.train_kata;
+
 import org.junit.jupiter.api.Test;
 
-public class TicketOfficeTest {
-    
+class TicketOfficeTest {
+
     @Test
     public void reserveSeats() {
         // TODO: Write this code!
