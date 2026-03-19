@@ -31,11 +31,6 @@ public class BookingTrainSteps {
         this.ticketOfficeScenarioState = ticketOfficeScenarioState;
     }
 
-    @After
-    public void printTrains() {
-        ticketOfficeScenarioState.printTrainsState();
-    }
-
     @Étantdonné("les trains de la compagnie ferroviaire")
     public void les_trains_de_la_compagnie_ferroviaire(TrainIdentifiers trainIdentifiers) {
         if (trainIdentifiers.isEmpty()) {
