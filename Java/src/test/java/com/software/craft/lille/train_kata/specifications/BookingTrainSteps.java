@@ -70,6 +70,7 @@ public class BookingTrainSteps {
     @Quand("le client réserve {int} places sur le train {trainIdentifier}")
     public void le_client_reserve_des_places_sur_le_train(int numberOfSeat, TrainIdentifier trainIdentifier) {
         ticketOfficeScenarioState.sendReservationRequest(numberOfSeat, trainIdentifier);
+        ticketOfficeScenarioState.printTrainsState();
     }
 
     @Alors("une référence de réservation est affectée au client")

@@ -8,7 +8,7 @@ Fonctionnalité: Réserver des places dans un train de la compagnie
 
   Contraintes métier:
   - Tous les sièges d'une réservation doivent être dans la même voiture
-  - Une voiture ne devrait pas dépasser 70 % de sièges réservés
+  - Un train dans son ensemble ne doit pas dépasser 70% de sa capacité
 
   N.B:
   La cohabitation de ces deux contraintes métier peut amener à dépasser les 70 % pour certaines voitures.
