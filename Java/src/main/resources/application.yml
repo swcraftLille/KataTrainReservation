@@ -1,19 +1,16 @@
 spring:
-  main:
-    banner-mode: off
   jackson:
     default-property-inclusion: non_null
     serialization:
       indent-output: true
     deserialization:
       fail-on-unknown-properties: false
-logging:
-  level:
-    org.springframework: ERROR
+  docker:
+    compose:
+      enabled: false
+
+booking-reference-service:
+  url: ${BOOKING_REFERENCE_HOST_URL}:${BOOKING_REFERENCE_PORT}
 
 train-data-service:
-  url: http://127.0.0.1
-  port: 8081
-booking-reference-service:
-  url: http://127.0.0.1
-  port: 8082
+  url: ${TRAIN_DATA_SERVICE_HOST_URL}:${TRAIN_DATA_SERVICE_PORT}

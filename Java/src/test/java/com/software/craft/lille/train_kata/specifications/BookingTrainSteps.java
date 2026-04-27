@@ -1,136 +1,159 @@
 package com.software.craft.lille.train_kata.specifications;
 
-import com.software.craft.lille.train_kata.specifications.type.model.DataForTrains;
-import com.software.craft.lille.train_kata.specifications.type.model.TrainCoach;
-import com.software.craft.lille.train_kata.specifications.type.model.TrainIdentifier;
-import com.software.craft.lille.train_kata.specifications.type.model.TrainIdentifiers;
+import com.software.craft.lille.train_kata.api.BookingReferenceClient;
+import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
+import com.software.craft.lille.train_kata.api.model.DataForTrain;
 import com.software.craft.lille.train_kata.ticket_office.Reservation;
+import com.software.craft.lille.train_kata.ticket_office.ReservationRequest;
 import com.software.craft.lille.train_kata.ticket_office.Seat;
-import io.cucumber.java.After;
+import com.software.craft.lille.train_kata.ticket_office.TicketOffice;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.Before;
 import io.cucumber.java.fr.Alors;
 import io.cucumber.java.fr.Quand;
 import io.cucumber.java.fr.Étantdonné;
-import io.cucumber.java.fr.Étantdonnéque;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.json.JsonMapper;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
+import static org.assertj.core.api.Fail.fail;
 
 public class BookingTrainSteps {
-    private final TicketOfficeScenarioState ticketOfficeScenarioState;
+    private static final Logger log = LoggerFactory.getLogger(BookingTrainSteps.class);
+    private final JsonMapper jsonMapper = new JsonMapper();
+    private final TrainDataServiceClient trainDataServiceClient;
+    private final BookingReferenceClient bookingReferenceClient;
+    private final TicketOffice ticketOffice;
+    private Reservation reservation;
+    private DataForTrain dataForTrainBeforeReservation;
 
-    public BookingTrainSteps(TicketOfficeScenarioState ticketOfficeScenarioState) {
-        this.ticketOfficeScenarioState = ticketOfficeScenarioState;
+    public BookingTrainSteps(
+            TrainDataServiceClient trainDataServiceClient,
+            BookingReferenceClient bookingReferenceClient,
+            TicketOffice ticketOffice) {
+        this.trainDataServiceClient = trainDataServiceClient;
+        this.bookingReferenceClient = bookingReferenceClient;
+        this.ticketOffice = ticketOffice;
     }
 
-    @Étantdonné("les trains de la compagnie ferroviaire")
-    public void les_trains_de_la_compagnie_ferroviaire(TrainIdentifiers trainIdentifiers) {
-        if (trainIdentifiers.isEmpty()) {
-            fail("No train provided.");
+    @Before
+    public void setup() {
+        List.of("local_1000", "express_2000").forEach(trainDataServiceClient::resetTrain);
+    }
+
+    @Étantdonné("le train {trainId}")
+    public void le_train(TrainId train, DataTable dataTable) {
+        for (Map<String, String> entry : dataTable.entries()) {
+            final String coach = entry.get("Voiture");
+            final String[] seatsOnCoach = entry.get("Sièges").split("-");
+            final List<String> seatToBookOnCoach = new ArrayList<>();
+            for (int seatNumber = 1; seatNumber <= seatsOnCoach.length; seatNumber++) {
+                final String seat = seatsOnCoach[seatNumber - 1];
+                if (seat.equalsIgnoreCase("X")) {
+                    seatToBookOnCoach.add("%d%s".formatted(seatNumber, coach));
+                }
+            }
+            if (!seatToBookOnCoach.isEmpty()) {
+                try {
+                    final ResponseEntity<String> response =
+                            trainDataServiceClient.reserveSeats(
+                                    train.value(),
+                                    jsonMapper.writeValueAsString(seatToBookOnCoach),
+                                    bookingReferenceClient.getBookingReference());
+                    if (response.getStatusCode().isError()) {
+                        fail("La réservation sur la train '%s' a échouée".formatted(train.value()));
+                    }
+                } catch (JsonProcessingException jsonProcessingException) {
+                    fail(
+                            "Impossible de définir la liste de sièges à réserver sur le train '%s'"
+                                    .formatted(train),
+                            jsonProcessingException);
+                }
+            }
         }
-        trainIdentifiers.elements().forEach(ticketOfficeScenarioState::resetTrain);
+        asDataForTrain(trainDataServiceClient.dataForTrain(train.value()).getBody())
+                .ifPresent(dataForTrain -> dataForTrainBeforeReservation = dataForTrain);
     }
 
-    @Étantdonnéque("le service de réservation est disponible")
-    public void le_service_de_réservation_est_disponible() {
-        final Optional<String> bookingReference =
-                Optional.ofNullable(ticketOfficeScenarioState.newBookingReference())
-                        .filter(not(String::isBlank));
-        assertThat(bookingReference).isPresent();
-    }
-
-    @Étantdonnéque("{int} sièges sont déjà réservés dans la voiture {coachDesignation} du train {trainIdentifier}")
-    public void des_sieges_sont_deja_reserves_dans_la_voiture_x_du_train(int numberOfSeats,
-                                                                         TrainCoach.Designation coach,
-                                                                         TrainIdentifier trainIdentifier) {
-        final Set<String> seatsToBook = IntStream.rangeClosed(1, numberOfSeats)
-                .mapToObj(seat -> "%s%s".formatted(seat, coach.value()))
-                .collect(Collectors.toSet());
-        ticketOfficeScenarioState.reserveSeats(trainIdentifier, seatsToBook);
-    }
-
-    @Étantdonnéque("chaque voiture du train {trainIdentifier} a 70% de sièges réservés")
-    public void chaque_voiture_du_train_compte_a_atteint_le_seuil_de_reservation(TrainIdentifier trainIdentifier) {
-        ticketOfficeScenarioState.reservePercentageOfOccupancyInEachTrainCoachs(trainIdentifier, 70);
-    }
-
-    @Étantdonnéque("les sièges réservés sur le train {trainIdentifier}")
-    public void les_sieges_reserves_sur_le_train_express_(TrainIdentifier trainIdentifier, TrainCoach.SeatNumbers seatNumbers) {
-        ticketOfficeScenarioState.reserveSeats(trainIdentifier, seatNumbers.values());
-    }
-
-    @Quand("le client réserve {int} places sur le train {trainIdentifier}")
-    public void le_client_reserve_des_places_sur_le_train(int numberOfSeat, TrainIdentifier trainIdentifier) {
-        ticketOfficeScenarioState.sendReservationRequest(numberOfSeat, trainIdentifier);
-        ticketOfficeScenarioState.printTrainsState();
+    @Quand("le client réserve {int} sièges sur le train {trainId}")
+    public void le_client_reserve_X_sieges_sur_le_train(int numberOfSeatsToBook, TrainId train) {
+        reservation =
+                ticketOffice.makeReservation(new ReservationRequest(train.value(), numberOfSeatsToBook));
     }
 
     @Alors("une référence de réservation est affectée au client")
-    public void une_référence_de_réservation_est_affectée_au_client() {
-        final Reservation reservation = assertReservationRequestHasSucceed();
+    public void une_reference_de_reservation_est_affectee_au_client() {
         assertThat(reservation).isNotNull();
-        assertThat(reservation.bookingId()).isNotBlank();
+        assertThat(reservation.bookingId()).isNotNull().isNotBlank();
     }
 
-    @Alors("les {int} sièges de la réservation appartiennent à la même voiture du train {trainIdentifier}")
-    public void les_sieges_de_la_réservation_appartiennent_à_la_même_voiture_du_train(int numberOfBookedSeats, TrainIdentifier trainIdentifier) {
-        final Reservation reservation = assertReservationRequestHasSucceed();
+    @Alors(
+            "les places de la réservation sur le train {trainId} appartiennent toutes à la même voiture")
+    public void les_places_de_la_reservation_sur_le_train_appartiennent_toutes_a_la_meme_voiture(
+            TrainId train) {
+        assertThat(reservation.seats()).isNotNull().isNotEmpty();
+        List<String> bookedSeatCoachs =
+                reservation.seats().stream().map(Seat::coach).distinct().toList();
+        assertThat(bookedSeatCoachs).hasSize(1);
+        final Optional<DataForTrain> dataForTrain =
+                asDataForTrain(trainDataServiceClient.dataForTrain(train.value()).getBody());
+        assertThat(dataForTrain).isPresent();
+        final Set<String> coachWithBookingReferenceOnTrain =
+                dataForTrain.get().seats().values().stream()
+                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(DataForTrain.Seat::coach)
+                        .collect(Collectors.toSet());
+        assertThat(coachWithBookingReferenceOnTrain).containsExactly(bookedSeatCoachs.getFirst());
+    }
+
+    @Alors("les places de la réservation sur le train {trainId} sont")
+    public void les_places_de_la_reservation_sur_le_train_sont(
+            TrainId train, Collection<Seat> seats) {
         assertThat(reservation).isNotNull();
-        assertThat(reservation.seats()).hasSize(numberOfBookedSeats);
-        assertBookedSeatsAreOnTheSameCoach(reservation);
-        assertTrainBookedSeatsContainsReservationSeats(trainIdentifier, reservation);
+        assertThat(reservation.seats()).isNotEmpty();
+        assertThat(reservation.seats()).containsExactlyInAnyOrderElementsOf(seats);
+        final Optional<DataForTrain> dataForTrain =
+                asDataForTrain(trainDataServiceClient.dataForTrain(train.value()).getBody());
+        assertThat(dataForTrain).isPresent();
+        final Set<Seat> seatsWithBookingReferenceOnTrain =
+                dataForTrain.get().seats().values().stream()
+                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(seat -> new Seat(seat.coach(), seat.seatNumber()))
+                        .collect(Collectors.toSet());
+        assertThat(seatsWithBookingReferenceOnTrain).containsExactlyInAnyOrderElementsOf(seats);
     }
 
     @Alors("aucune référence de réservation n'est affectée au client")
-    public void aucune_reference_de_reservation_n_est_affectee_au_client() {
-        assertReservationRequestHasSucceed();
-        assertThat(ticketOfficeScenarioState.reservationReference()).isEmpty();
-    }
-
-    @Alors("aucun nouveau siège n'a été réservé sur le train {trainIdentifier}")
-    public void aucun_nouveau_siege_n_a_ete_reserve_sur_le_train_local_(TrainIdentifier trainIdentifier) {
-        final Reservation reservation = assertReservationRequestHasSucceed();
-        assertThat(reservation).isNotNull().isEqualTo(new Reservation(trainIdentifier.value(), List.of(), ""));
-    }
-
-    @Alors("les {int} sièges de la réservation appartiennent à la voiture {coachDesignation} du train {trainIdentifier}")
-    public void les_sieges_de_la_reservation_appartiennent_a_la_voiture_x_du_train(int bookedSeatsNumber, TrainCoach.Designation coach, TrainIdentifier trainIdentifier) {
-        final Reservation reservation = assertReservationRequestHasSucceed();
+    public void aucune_reference_de_reservation_n8est_affectee_au_client() {
         assertThat(reservation).isNotNull();
-        assertThat(reservation.trainId()).isEqualTo(trainIdentifier.value());
-        long numberOfBookedSeatsInCoach = reservation.seats().stream().filter(seat -> seat.coach().equalsIgnoreCase(coach.value())).count();
-        assertThat(numberOfBookedSeatsInCoach).isEqualTo(bookedSeatsNumber);
-
+        assertThat(reservation.bookingId()).isNotNull().isBlank();
     }
 
-    private void assertTrainBookedSeatsContainsReservationSeats(TrainIdentifier trainIdentifier, Reservation reservation) {
-        final Set<Seat> trainBookedSeats = fetchTrainData(trainIdentifier).seatsWithBookingReference(reservation.bookingId()).stream().map(trainSeat -> new Seat(trainSeat.coach(), Integer.parseInt(trainSeat.seatNumber()))).collect(Collectors.toUnmodifiableSet());
-        assertThat(trainBookedSeats).containsAll(reservation.seats());
+    @Alors("aucun siège n'a été réservé sur le train {trainId}")
+    public void aucun_siege_n_a_ete_reserve_sur_le_train(TrainId trainId) {
+        final Optional<DataForTrain> dataForTrain =
+                asDataForTrain(trainDataServiceClient.dataForTrain(trainId.value()).getBody());
+        assertThat(dataForTrain).isPresent();
+        assertThat(dataForTrain.get()).isEqualTo(dataForTrainBeforeReservation);
     }
 
-    private void assertBookedSeatsAreOnTheSameCoach(Reservation reservation) {
-        final Set<String> seatsCoach = reservation.seats().stream().map(Seat::coach).collect(Collectors.toSet());
-        assertThat(seatsCoach).hasSize(1);
-    }
-
-    private Reservation assertReservationRequestHasSucceed() {
-        final Optional<Reservation> reservation = ticketOfficeScenarioState.reservation();
-        assertThat(reservation).isPresent();
-        return reservation.get();
-    }
-
-    private DataForTrains fetchTrainData(TrainIdentifier trainIdentifier) {
-        final Map<TrainIdentifier, DataForTrains> dataForTrain = ticketOfficeScenarioState.dataForTrain();
-        final Optional<DataForTrains> dataForTrainResponse = Optional.ofNullable(dataForTrain.get(trainIdentifier));
-        assertThat(dataForTrainResponse).isPresent();
-        return dataForTrainResponse.get();
+    private Optional<DataForTrain> asDataForTrain(String body) {
+        try {
+            return Optional.of(jsonMapper.readValue(body, DataForTrain.class));
+        } catch (JsonProcessingException jsonProcessingException) {
+            log.error("Impossible de transformer les données du train", jsonProcessingException);
+            return Optional.empty();
+        }
     }
 }

@@ -1,13 +1,11 @@
 package com.software.craft.lille.train_kata.ticket_office;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class TicketOffice {
-    
-    public Reservation makeReservation(ReservationRequest request) {
-		//TODO: implement this code!
-		return null;
+    public Reservation makeReservation(ReservationRequest reservationRequest) {
+        // Implements me
+        return null;
     }
-
 }
