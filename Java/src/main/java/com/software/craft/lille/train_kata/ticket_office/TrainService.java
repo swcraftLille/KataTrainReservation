@@ -30,12 +30,18 @@ public class TrainService {
     }
 
     public Reservation reserveSeatsOnTrain(String trainId, List<Seat> seats) {
-        final String bookingReference = newBookingReference();
-        final Optional<DataForTrain> dataForTrain = bookSeats(trainId, buildSeatsToBook(seats), bookingReference);
-        if (dataForTrain.isPresent()) {
+        final String bookingReference = bookingReferenceClient.getBookingReference();
+        if (seatsHasBeenBooked(trainId, seats, bookingReference)) {
             return new Reservation(trainId, seats, bookingReference);
         }
         return new Reservation(trainId, seats, "");
+    }
+
+    private boolean seatsHasBeenBooked(String trainId, List<Seat> seats, String bookingReference) {
+        final String seatsToBook = jsonMapper.writeValueAsString(seats.stream()
+                .map(seat -> "%d%s".formatted(seat.seatNumber(), seat.coach()))
+                .toList());
+        return bookSeats(trainId, seatsToBook, bookingReference).isPresent();
     }
 
     private Optional<DataForTrain> bookSeats(String trainId, String seatsToBook, String bookingReference) {
@@ -47,7 +53,7 @@ public class TrainService {
                             bookingReference))
                     .filter(this::reservationSucceed)
                     .map(ResponseEntity::getBody)
-                    .map(body -> jsonMapper.readValue(body, DataForTrain.class));
+                    .map(this::readDataForTrain);
         } catch (JacksonException jacksonException) {
             logger.warn("[{}] Impossible to book seats '{}' for train '{}'",
                     getClass().getSimpleName(),
@@ -58,18 +64,12 @@ public class TrainService {
         return dataForTrain;
     }
 
+    private DataForTrain readDataForTrain(String body) {
+        return jsonMapper.readValue(body, DataForTrain.class);
+    }
+
     private boolean reservationSucceed(ResponseEntity<String> response) {
         return Boolean.logicalAnd(response.getStatusCode() == OK,
                 Optional.ofNullable(response.getBody()).filter(not(String::isBlank)).isPresent());
-    }
-
-    private String newBookingReference() {
-        return bookingReferenceClient.getBookingReference();
-    }
-
-    private String buildSeatsToBook(List<Seat> seats) {
-        return jsonMapper.writeValueAsString(seats.stream()
-                .map(seat -> "%d%s".formatted(seat.seatNumber(), seat.coach()))
-                .toList());
     }
 }
