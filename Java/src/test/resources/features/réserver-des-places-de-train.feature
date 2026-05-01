@@ -25,6 +25,7 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
       Alors une référence de réservation est affectée au client
       Et les places de la réservation sur le train express_2000 appartiennent toutes à la même voiture
 
+    @RESERVATION
     Scénario: Le client réserve des places sur un train partiellement occupé
       Étant donné le train local_1000
         | Voiture | Sièges          |
