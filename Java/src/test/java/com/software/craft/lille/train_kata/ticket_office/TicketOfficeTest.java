@@ -41,7 +41,28 @@ class TicketOfficeTest {
     @Test
     public void makeReservation_bookTheRequestedNumberOfSeatsOnATrain_onTheSameCoach() {
         final ReservationRequest reservationRequest = new ReservationRequest("requestedTrain", 2);
-        final TicketOffice ticketOffice = new TicketOffice(() -> "new booking reference", new StubTrainService(reservationRequest));
+        given(bookingReferenceClient.getBookingReference()).willReturn("new booking reference");
+        given(trainDataServiceClient.reserveSeats(
+                "requestedTrain",
+                """
+                        ["1A","2A"]""",
+                "new booking reference"))
+                .willReturn(ResponseEntity.ok("""
+                        {
+                            "seats": {
+                                "1A": {
+                                   "booking_reference": "new booking reference",
+                                   "seat_number": "1",
+                                   "coach": "A"
+                                },
+                                "2A": {
+                                   "booking_reference": "new booking reference",
+                                   "seat_number": "2",
+                                   "coach": "A"
+                                }
+                            }
+                        }
+                        """));
 
         final Reservation reservation = ticketOffice.makeReservation(reservationRequest);
 

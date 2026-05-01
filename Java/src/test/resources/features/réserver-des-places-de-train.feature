@@ -15,7 +15,7 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
   Le système doit équilibrer les réservations entre les voitures.
 
   Règle: Tous les sièges d'une même réservation doivent être placés dans la même voiture
-    @RESERVATION
+    #@RESERVATION
     Scénario: Le client réserve des places sur un train vide
       Étant donné le train express_2000
         | Voiture | Sièges          |
