@@ -36,5 +36,4 @@ public class TicketOffice {
                 dataForTrain.seatsBookedWithReference(bookingReference),
                 bookingReference);
     }
-
 }

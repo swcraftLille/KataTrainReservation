@@ -74,21 +74,4 @@ class TicketOfficeTest {
                         new Seat("A", 2)
                 );
     }
-
-    @Test
-    public void makeReservation_bookTheRequestedNumberOfSeatsOnATrainOnTheSameCoach_usingTrainService() {
-        final ReservationRequest reservationRequest = new ReservationRequest("requestedTrain", 2);
-        final TicketOffice ticketOffice = new TicketOffice(() -> "new booking reference",
-                new StubTrainService(reservationRequest));
-
-        Reservation reservation = ticketOffice.makeReservation(reservationRequest);
-
-        assertThat(reservation).isNotNull();
-        assertThat(reservation.trainId()).isEqualTo("requestedTrain");
-        assertThat(reservation.seats()).isNotNull().hasSize(2)
-                .containsExactlyInAnyOrder(
-                        new Seat("A", 1),
-                        new Seat("A", 2)
-                );
-    }
 }
