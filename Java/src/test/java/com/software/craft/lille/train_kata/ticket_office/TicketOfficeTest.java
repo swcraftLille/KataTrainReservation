@@ -56,12 +56,12 @@ class TicketOfficeTest {
                                         {
                                           "seats": {
                                             "1a coach": {
-                                              "booking_reference": "a booking reference",
+                                              "booking_reference": "new booking reference",
                                               "seat_number": "1",
                                               "coach": "a coach"
                                             },
                                             "2a coach": {
-                                              "booking_reference": "a booking reference",
+                                              "booking_reference": "new booking reference",
                                               "seat_number": "2",
                                               "coach": "a coach"
                                             }
@@ -104,12 +104,12 @@ class TicketOfficeTest {
                                         {
                                           "seats": {
                                             "1a coach": {
-                                              "booking_reference": "a booking reference",
+                                              "booking_reference": "new booking reference",
                                               "seat_number": "1",
                                               "coach": "a coach"
                                             },
                                             "2a coach": {
-                                              "booking_reference": "a booking reference",
+                                              "booking_reference": "new booking reference",
                                               "seat_number": "2",
                                               "coach": "a coach"
                                             },

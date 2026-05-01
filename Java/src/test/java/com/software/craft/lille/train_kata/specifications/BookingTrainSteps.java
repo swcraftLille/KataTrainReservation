@@ -111,8 +111,8 @@ public class BookingTrainSteps {
         assertThat(dataForTrain).isPresent();
         final Set<String> coachWithBookingReferenceOnTrain =
                 dataForTrain.get().seats().values().stream()
-                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
-                        .map(DataForTrain.Seat::coach)
+                        .filter(trainSeat -> trainSeat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(DataForTrain.TrainSeat::coach)
                         .collect(Collectors.toSet());
         assertThat(coachWithBookingReferenceOnTrain).containsExactly(bookedSeatCoachs.getFirst());
     }
@@ -128,8 +128,8 @@ public class BookingTrainSteps {
         assertThat(dataForTrain).isPresent();
         final Set<Seat> seatsWithBookingReferenceOnTrain =
                 dataForTrain.get().seats().values().stream()
-                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
-                        .map(seat -> new Seat(seat.coach(), seat.seatNumber()))
+                        .filter(trainSeat -> trainSeat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(trainSeat -> new Seat(trainSeat.coach(), trainSeat.seatNumber()))
                         .collect(Collectors.toSet());
         assertThat(seatsWithBookingReferenceOnTrain).containsExactlyInAnyOrderElementsOf(seats);
     }
