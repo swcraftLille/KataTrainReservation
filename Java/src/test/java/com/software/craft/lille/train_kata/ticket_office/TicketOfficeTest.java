@@ -15,4 +15,19 @@ class TicketOfficeTest {
         assertThat(reservation).isNotNull();
         assertThat(reservation.bookingId()).isEqualTo("new booking reference");
     }
+
+    @Test
+    public void makeReservation_bookTheRequestedNumberOfSeatsOnATrain_onTheSameCoach() {
+        TicketOffice ticketOffice = new TicketOffice(() -> "new booking reference");
+
+        Reservation reservation = ticketOffice.makeReservation(new ReservationRequest("requestedTrain", 2));
+
+        assertThat(reservation).isNotNull();
+        assertThat(reservation.trainId()).isEqualTo("requestedTrain");
+        assertThat(reservation.seats()).isNotNull().hasSize(2)
+                .containsExactlyInAnyOrder(
+                        new Seat("a coach", 1),
+                        new Seat("a coach", 2)
+                );
+    }
 }

@@ -3,7 +3,7 @@ package com.software.craft.lille.train_kata.ticket_office;
 import com.software.craft.lille.train_kata.api.BookingReferenceClient;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.stream.IntStream;
 
 @Component
 public class TicketOffice {
@@ -15,7 +15,10 @@ public class TicketOffice {
     }
 
     public Reservation makeReservation(ReservationRequest reservationRequest) {
-        // Implements me
-        return new Reservation("", List.of(), bookingReferenceClient.getBookingReference());
+        return new Reservation(reservationRequest.trainId(),
+                IntStream.rangeClosed(1, reservationRequest.seatCount())
+                        .mapToObj(seatNumber -> new Seat("a coach", seatNumber))
+                        .toList(),
+                bookingReferenceClient.getBookingReference());
     }
 }
