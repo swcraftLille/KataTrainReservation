@@ -12,6 +12,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static java.util.function.Predicate.not;
 import static org.springframework.http.HttpStatus.OK;
@@ -37,6 +38,11 @@ public class TrainService {
         return new Reservation(trainId, seats, "");
     }
 
+    public DataForTrain dataForTrain(String train) {
+        return asDataForTrain(() -> trainDataServiceClient.dataForTrain(train))
+                .orElseGet(DataForTrain::empty);
+    }
+
     private boolean seatsHasBeenBooked(String trainId, List<Seat> seats, String bookingReference) {
         final String seatsToBook = jsonMapper.writeValueAsString(seats.stream()
                 .map(seat -> "%d%s".formatted(seat.seatNumber(), seat.coach()))
@@ -45,31 +51,34 @@ public class TrainService {
     }
 
     private Optional<DataForTrain> bookSeats(String trainId, String seatsToBook, String bookingReference) {
-        Optional<DataForTrain> dataForTrain = Optional.empty();
-        try {
-            dataForTrain = Optional.ofNullable(trainDataServiceClient.reserveSeats(
-                            trainId,
-                            seatsToBook,
-                            bookingReference))
-                    .filter(this::reservationSucceed)
-                    .map(ResponseEntity::getBody)
-                    .map(this::readDataForTrain);
-        } catch (JacksonException jacksonException) {
-            logger.warn("[{}] Impossible to book seats '{}' for train '{}'",
-                    getClass().getSimpleName(),
-                    seatsToBook,
-                    trainId,
-                    jacksonException);
-        }
-        return dataForTrain;
-    }
-
-    private DataForTrain readDataForTrain(String body) {
-        return jsonMapper.readValue(body, DataForTrain.class);
+        final Supplier<ResponseEntity<String>> reserveSeatsResponse = () -> trainDataServiceClient.reserveSeats(
+                trainId,
+                seatsToBook,
+                bookingReference);
+        return asDataForTrain(reserveSeatsResponse);
     }
 
     private boolean reservationSucceed(ResponseEntity<String> response) {
         return Boolean.logicalAnd(response.getStatusCode() == OK,
                 Optional.ofNullable(response.getBody()).filter(not(String::isBlank)).isPresent());
+    }
+
+    private Optional<DataForTrain> asDataForTrain(Supplier<ResponseEntity<String>> data) {
+        return Optional.ofNullable(data.get())
+                .filter(this::reservationSucceed)
+                .map(ResponseEntity::getBody)
+                .flatMap(this::readDataForTrain);
+    }
+
+    private Optional<DataForTrain> readDataForTrain(String body) {
+        try {
+            return Optional.ofNullable(jsonMapper.readValue(body, DataForTrain.class));
+        } catch (JacksonException jacksonException) {
+            logger.warn("[{}] Impossible to get data from '{}'",
+                    getClass().getSimpleName(),
+                    body,
+                    jacksonException);
+            return Optional.empty();
+        }
     }
 }

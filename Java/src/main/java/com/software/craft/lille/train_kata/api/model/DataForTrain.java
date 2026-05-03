@@ -8,14 +8,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+
 public record DataForTrain(@JsonProperty("seats") Map<String, TrainSeat> seats) implements Serializable {
-    public List<Seat> seatsBookedWithReference(String bookingReference) {
+    public static DataForTrain empty() {
+        return new DataForTrain(Map.of());
+    }
+
+    public Map<String, List<Seat>> coachWithNumberOfSeatsAvailable(int numberOfSeats) {
         return seats()
                 .values()
                 .stream()
-                .filter(trainSeat -> trainSeat.hasBookingReference(bookingReference))
+                .filter(TrainSeat::isAvailable)
                 .map(TrainSeat::toSeat)
-                .toList();
+                .collect(groupingBy(Seat::coach))
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().size() >= numberOfSeats)
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public record TrainSeat(@JsonProperty("coach") String coach,
@@ -25,10 +36,8 @@ public record DataForTrain(@JsonProperty("seats") Map<String, TrainSeat> seats) 
             return new Seat(coach(), seatNumber());
         }
 
-        public boolean hasBookingReference(String bookingReference) {
-            final String reference = Optional.ofNullable(bookingReference).orElse("");
-            final String seatBookingReference = Optional.ofNullable(bookingReference()).orElse("");
-            return seatBookingReference.equalsIgnoreCase(reference);
+        public boolean isAvailable() {
+            return Optional.ofNullable(bookingReference).orElse("").isBlank();
         }
     }
 }

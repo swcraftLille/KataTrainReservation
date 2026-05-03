@@ -24,7 +24,7 @@ public class BookingTrainType {
     private Seat toSeat(Map<String, String> row) {
         final String seats = row.get("Sièges");
         return new Seat(
-                seats.substring(1, seats.length() - 1),
+                seats.substring(1),
                 Integer.parseInt(seats.substring(0, seats.length() - 1)));
     }
 }

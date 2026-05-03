@@ -2,7 +2,11 @@ package com.software.craft.lille.train_kata.ticket_office;
 
 import org.springframework.stereotype.Component;
 
-import java.util.stream.IntStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.function.Predicate.not;
 
 @Component
 public class TicketOffice {
@@ -14,8 +18,17 @@ public class TicketOffice {
 
     public Reservation makeReservation(ReservationRequest reservationRequest) {
         return trainService.reserveSeatsOnTrain(reservationRequest.trainId(),
-                IntStream.rangeClosed(1, reservationRequest.seatCount())
-                        .mapToObj(seatNumber -> new Seat("A", seatNumber))
-                        .toList());
+                defineSeatsToBook(reservationRequest));
+    }
+
+    private List<Seat> defineSeatsToBook(ReservationRequest reservationRequest) {
+        final Map<String, List<Seat>> coachWithNumberOfSeatsAvailable =
+                trainService.dataForTrain(reservationRequest.trainId())
+                        .coachWithNumberOfSeatsAvailable(reservationRequest.seatCount());
+        return coachWithNumberOfSeatsAvailable.values()
+                .stream()
+                .filter(not(List::isEmpty))
+                .findAny()
+                .orElseGet(Collections::emptyList).subList(0, reservationRequest.seatCount());
     }
 }
