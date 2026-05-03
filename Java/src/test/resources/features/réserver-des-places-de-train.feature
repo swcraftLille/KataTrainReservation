@@ -41,6 +41,7 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
         | 3B     |
 
   Règle: Si possible, une voiture ne doit pas dépasser 70% de sa capacité
+    @RESERVATION
     Scénario: Le nombre de sièges demandé ne peut être réservé que dans une seule voiture du train
       Étant donné le train local_1000
         | Voiture | Sièges          |
