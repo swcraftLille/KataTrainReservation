@@ -1,12 +1,11 @@
 package com.software.craft.lille.train_kata.ticket_office;
 
-import org.springframework.stereotype.Component;
+import static java.util.function.Predicate.not;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.function.Predicate.not;
+import org.springframework.stereotype.Component;
 
 @Component
 public class TicketOffice {

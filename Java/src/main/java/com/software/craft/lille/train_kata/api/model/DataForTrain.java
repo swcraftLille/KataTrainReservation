@@ -1,15 +1,14 @@
 package com.software.craft.lille.train_kata.api.model;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.software.craft.lille.train_kata.ticket_office.Seat;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
 
 public record DataForTrain(@JsonProperty("seats") Map<String, TrainSeat> seats) implements Serializable {
     public static DataForTrain empty() {

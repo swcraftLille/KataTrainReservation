@@ -4,9 +4,9 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.ProblemDetail;
 
 public class TrainCompanyClientException extends RuntimeException {
-    public TrainCompanyClientException(HttpRequest request, ProblemDetail problem) {
-        super(
-                "Request '%s %s' failed: %s"
-                        .formatted(request.getMethod(), request.getURI(), problem.toString()));
-    }
+  public TrainCompanyClientException(HttpRequest request, ProblemDetail problem) {
+    super(
+        "Request '%s %s' failed: %s"
+            .formatted(request.getMethod(), request.getURI(), problem.toString()));
+  }
 }

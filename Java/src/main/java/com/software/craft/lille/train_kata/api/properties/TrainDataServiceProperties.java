@@ -1,10 +1,9 @@
 package com.software.craft.lille.train_kata.api.properties;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import static java.util.function.Predicate.not;
 
 import java.util.Optional;
-
-import static java.util.function.Predicate.not;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "train-data-service")
 public record TrainDataServiceProperties(String url) implements HttpClientProperties {

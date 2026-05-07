@@ -6,6 +6,8 @@ import com.software.craft.lille.train_kata.api.model.TrainCompanyClientException
 import com.software.craft.lille.train_kata.api.properties.BookingReferenceServiceProperties;
 import com.software.craft.lille.train_kata.api.properties.HttpClientProperties;
 import com.software.craft.lille.train_kata.api.properties.TrainDataServiceProperties;
+import java.io.IOException;
+import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,9 +19,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import tools.jackson.databind.json.JsonMapper;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 @Configuration
 @EnableConfigurationProperties({TrainDataServiceProperties.class, BookingReferenceServiceProperties.class})
