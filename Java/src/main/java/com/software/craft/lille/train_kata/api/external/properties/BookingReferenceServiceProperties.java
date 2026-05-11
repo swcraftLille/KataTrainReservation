@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata.api.properties;
+package com.software.craft.lille.train_kata.api.external.properties;
 
 import static java.util.function.Predicate.not;
 

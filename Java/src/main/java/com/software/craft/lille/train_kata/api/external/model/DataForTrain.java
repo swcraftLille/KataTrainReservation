@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata.api.model;
+package com.software.craft.lille.train_kata.api.external.model;
 
 import static java.util.function.Predicate.not;
 

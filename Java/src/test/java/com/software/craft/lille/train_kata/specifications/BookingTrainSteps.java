@@ -3,9 +3,9 @@ package com.software.craft.lille.train_kata.specifications;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
 
-import com.software.craft.lille.train_kata.api.BookingReferenceClient;
-import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
-import com.software.craft.lille.train_kata.api.model.DataForTrain;
+import com.software.craft.lille.train_kata.api.external.BookingReferenceClient;
+import com.software.craft.lille.train_kata.api.external.TrainDataServiceClient;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
 import com.software.craft.lille.train_kata.ticket_office.TicketOffice;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
 import com.software.craft.lille.train_kata.ticket_office.reservation.ReservationRequest;

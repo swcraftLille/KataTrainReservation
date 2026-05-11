@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata.api.model;
+package com.software.craft.lille.train_kata.api.external.model;
 
 import org.springframework.http.HttpRequest;
 import org.springframework.http.ProblemDetail;

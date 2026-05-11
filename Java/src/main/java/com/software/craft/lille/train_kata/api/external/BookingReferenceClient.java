@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata.api;
+package com.software.craft.lille.train_kata.api.external;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.service.annotation.GetExchange;

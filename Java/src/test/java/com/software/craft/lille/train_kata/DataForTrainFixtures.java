@@ -1,6 +1,6 @@
 package com.software.craft.lille.train_kata;
 
-import com.software.craft.lille.train_kata.api.model.DataForTrain;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

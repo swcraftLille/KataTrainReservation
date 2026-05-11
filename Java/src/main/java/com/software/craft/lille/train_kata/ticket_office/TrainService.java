@@ -3,9 +3,9 @@ package com.software.craft.lille.train_kata.ticket_office;
 import static java.util.function.Predicate.not;
 import static org.springframework.http.HttpStatus.OK;
 
-import com.software.craft.lille.train_kata.api.BookingReferenceClient;
-import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
-import com.software.craft.lille.train_kata.api.model.DataForTrain;
+import com.software.craft.lille.train_kata.api.external.BookingReferenceClient;
+import com.software.craft.lille.train_kata.api.external.TrainDataServiceClient;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;
 import java.util.List;

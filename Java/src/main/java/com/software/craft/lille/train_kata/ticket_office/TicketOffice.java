@@ -7,8 +7,8 @@ import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.teeing;
 
-import com.software.craft.lille.train_kata.api.model.DataForTrain;
-import com.software.craft.lille.train_kata.api.model.DataForTrain.TrainSeat;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain.TrainSeat;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
 import com.software.craft.lille.train_kata.ticket_office.reservation.ReservationRequest;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;

@@ -1,11 +1,11 @@
-package com.software.craft.lille.train_kata.api.http_clients;
+package com.software.craft.lille.train_kata.api.external.http_clients;
 
-import com.software.craft.lille.train_kata.api.BookingReferenceClient;
-import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
-import com.software.craft.lille.train_kata.api.model.TrainCompanyClientException;
-import com.software.craft.lille.train_kata.api.properties.BookingReferenceServiceProperties;
-import com.software.craft.lille.train_kata.api.properties.HttpClientProperties;
-import com.software.craft.lille.train_kata.api.properties.TrainDataServiceProperties;
+import com.software.craft.lille.train_kata.api.external.BookingReferenceClient;
+import com.software.craft.lille.train_kata.api.external.TrainDataServiceClient;
+import com.software.craft.lille.train_kata.api.external.model.TrainCompanyClientException;
+import com.software.craft.lille.train_kata.api.external.properties.BookingReferenceServiceProperties;
+import com.software.craft.lille.train_kata.api.external.properties.HttpClientProperties;
+import com.software.craft.lille.train_kata.api.external.properties.TrainDataServiceProperties;
 import java.io.IOException;
 import java.io.InputStream;
 import org.slf4j.Logger;
