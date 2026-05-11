@@ -1,0 +1,3 @@
+package com.software.craft.lille.train_kata.ticket_office.reservation;
+
+public record Seat(String coach, int seatNumber) {}

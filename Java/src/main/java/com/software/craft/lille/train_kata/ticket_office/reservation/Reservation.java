@@ -1,4 +1,4 @@
-package com.software.craft.lille.train_kata.ticket_office;
+package com.software.craft.lille.train_kata.ticket_office.reservation;
 
 import java.util.List;
 

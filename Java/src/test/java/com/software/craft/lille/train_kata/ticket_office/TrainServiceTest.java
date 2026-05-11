@@ -10,6 +10,8 @@ import com.software.craft.lille.train_kata.api.BookingReferenceClient;
 import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
 import com.software.craft.lille.train_kata.api.model.DataForTrain;
 import com.software.craft.lille.train_kata.api.model.DataForTrain.TrainSeat;
+import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
+import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
