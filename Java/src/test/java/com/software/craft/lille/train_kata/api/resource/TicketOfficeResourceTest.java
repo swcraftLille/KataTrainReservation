@@ -61,6 +61,33 @@ class TicketOfficeResourceTest {
 
         verify(ticketOffice).makeReservation(new ReservationRequest("express_2000", 2));
       }
+
+      @Test
+      void bookTrain_respondOKWithTicketContainingOnlyRequestedTrain_whenBookingNotPossible()
+          throws Exception {
+        given(ticketOffice.makeReservation(any(ReservationRequest.class)))
+            .willReturn(new Reservation("express_2000", List.of(), ""));
+        mockMvc
+            .perform(
+                post("/v1/train/book")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                                {
+                                  "train_id": "express_2000",
+                                  "number_of_seats": "2"
+                                }
+                                """))
+            .andExpect(status().isOk())
+            .andExpectAll(
+                jsonPath("$.train_id", is("express_2000")),
+                jsonPath("$.booking_reference", is("")),
+                jsonPath("$.seats").isArray(),
+                jsonPath("$.seats").isEmpty());
+
+        verify(ticketOffice).makeReservation(new ReservationRequest("express_2000", 2));
+      }
     }
   }
 }

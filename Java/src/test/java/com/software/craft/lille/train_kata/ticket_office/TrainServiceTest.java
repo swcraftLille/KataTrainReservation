@@ -105,7 +105,7 @@ class TrainServiceTest {
 
       final Reservation reservation = trainService.reserveSeatsOnTrain("a train", seatsToBook);
 
-      assertThat(reservation).isEqualTo(new Reservation("a train", seatsToBook, ""));
+      assertThat(reservation).isEqualTo(new Reservation("a train", List.of(), ""));
     }
 
     @ParameterizedTest(
@@ -167,7 +167,7 @@ class TrainServiceTest {
 
       final Reservation reservation = trainService.reserveSeatsOnTrain("a train", seatsToBook);
 
-      assertThat(reservation).isEqualTo(new Reservation("a train", seatsToBook, ""));
+      assertThat(reservation).isEqualTo(new Reservation("a train", List.of(), ""));
     }
   }
 

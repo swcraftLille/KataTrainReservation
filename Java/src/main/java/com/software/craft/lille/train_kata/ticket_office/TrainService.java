@@ -36,7 +36,7 @@ public class TrainService {
         if (seatsHasBeenBooked(trainId, seats, bookingReference)) {
             return new Reservation(trainId, seats, bookingReference);
         }
-        return new Reservation(trainId, seats, "");
+    return new Reservation(trainId, List.of(), "");
     }
 
     public DataForTrain dataForTrain(String train) {
