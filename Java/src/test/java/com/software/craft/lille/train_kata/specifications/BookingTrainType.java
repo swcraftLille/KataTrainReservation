@@ -1,14 +1,13 @@
 package com.software.craft.lille.train_kata.specifications;
 
-import com.software.craft.lille.train_kata.ticket_office.Seat;
+import static java.util.stream.Collectors.toUnmodifiableSet;
+
+import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.DataTableType;
 import io.cucumber.java.ParameterType;
-
 import java.util.Collection;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class BookingTrainType {
     @ParameterType(".*")
@@ -24,7 +23,7 @@ public class BookingTrainType {
     private Seat toSeat(Map<String, String> row) {
         final String seats = row.get("Sièges");
         return new Seat(
-                seats.substring(1, seats.length() - 1),
+                seats.substring(1),
                 Integer.parseInt(seats.substring(0, seats.length() - 1)));
     }
 }

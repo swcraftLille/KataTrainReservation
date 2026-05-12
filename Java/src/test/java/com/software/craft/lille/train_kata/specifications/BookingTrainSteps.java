@@ -1,23 +1,20 @@
 package com.software.craft.lille.train_kata.specifications;
 
-import com.software.craft.lille.train_kata.api.BookingReferenceClient;
-import com.software.craft.lille.train_kata.api.TrainDataServiceClient;
-import com.software.craft.lille.train_kata.api.model.DataForTrain;
-import com.software.craft.lille.train_kata.ticket_office.Reservation;
-import com.software.craft.lille.train_kata.ticket_office.ReservationRequest;
-import com.software.craft.lille.train_kata.ticket_office.Seat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
+
+import com.software.craft.lille.train_kata.api.external.BookingReferenceClient;
+import com.software.craft.lille.train_kata.api.external.TrainDataServiceClient;
+import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
 import com.software.craft.lille.train_kata.ticket_office.TicketOffice;
+import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
+import com.software.craft.lille.train_kata.ticket_office.reservation.ReservationRequest;
+import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.fr.Alors;
 import io.cucumber.java.fr.Quand;
 import io.cucumber.java.fr.Étantdonné;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.json.JsonMapper;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,9 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Fail.fail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class BookingTrainSteps {
     private static final Logger log = LoggerFactory.getLogger(BookingTrainSteps.class);
@@ -66,11 +65,11 @@ public class BookingTrainSteps {
             }
             if (!seatToBookOnCoach.isEmpty()) {
                 try {
-                    final ResponseEntity<String> response =
-                            trainDataServiceClient.reserveSeats(
-                                    train.value(),
-                                    jsonMapper.writeValueAsString(seatToBookOnCoach),
-                                    bookingReferenceClient.getBookingReference());
+          final ResponseEntity<String> response =
+              trainDataServiceClient.reserveSeats(
+                  train.value(),
+                  jsonMapper.writeValueAsString(seatToBookOnCoach),
+                  bookingReferenceClient.getBookingReference().getBody());
                     if (response.getStatusCode().isError()) {
                         fail("La réservation sur la train '%s' a échouée".formatted(train.value()));
                     }
@@ -111,8 +110,8 @@ public class BookingTrainSteps {
         assertThat(dataForTrain).isPresent();
         final Set<String> coachWithBookingReferenceOnTrain =
                 dataForTrain.get().seats().values().stream()
-                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
-                        .map(DataForTrain.Seat::coach)
+                        .filter(trainSeat -> trainSeat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(DataForTrain.TrainSeat::coach)
                         .collect(Collectors.toSet());
         assertThat(coachWithBookingReferenceOnTrain).containsExactly(bookedSeatCoachs.getFirst());
     }
@@ -128,8 +127,8 @@ public class BookingTrainSteps {
         assertThat(dataForTrain).isPresent();
         final Set<Seat> seatsWithBookingReferenceOnTrain =
                 dataForTrain.get().seats().values().stream()
-                        .filter(seat -> seat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
-                        .map(seat -> new Seat(seat.coach(), seat.seatNumber()))
+                        .filter(trainSeat -> trainSeat.bookingReference().equalsIgnoreCase(reservation.bookingId()))
+                        .map(trainSeat -> new Seat(trainSeat.coach(), trainSeat.seatNumber()))
                         .collect(Collectors.toSet());
         assertThat(seatsWithBookingReferenceOnTrain).containsExactlyInAnyOrderElementsOf(seats);
     }
@@ -142,6 +141,8 @@ public class BookingTrainSteps {
 
     @Alors("aucun siège n'a été réservé sur le train {trainId}")
     public void aucun_siege_n_a_ete_reserve_sur_le_train(TrainId trainId) {
+    assertThat(reservation).isNotNull();
+    assertThat(reservation.seats()).isEmpty();
         final Optional<DataForTrain> dataForTrain =
                 asDataForTrain(trainDataServiceClient.dataForTrain(trainId.value()).getBody());
         assertThat(dataForTrain).isPresent();

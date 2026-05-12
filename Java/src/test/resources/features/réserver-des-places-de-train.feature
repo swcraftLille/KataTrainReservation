@@ -40,6 +40,7 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
         | 3B     |
 
   Règle: Si possible, une voiture ne doit pas dépasser 70% de sa capacité
+
     Scénario: Le nombre de sièges demandé ne peut être réservé que dans une seule voiture du train
       Étant donné le train local_1000
         | Voiture | Sièges          |
@@ -56,19 +57,16 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
         | 4B     |
         | 5B     |
 
-  Règle: Pour un train dans son ensemble, pas plus de 70 % des sièges ne peuvent être réservés
-
-    Scénario: Une voiture dépasse 70% de sa capacité
-      Étant donné le train express_2000
+    Scénario: Les sièges demandés ne peuvent être réservés que dans une seule voiture du train sans dépasser le seuil maximum de réservation
+      Étant donné le train local_1000
         | Voiture | Sièges          |
-        | A       | X-X-X-O-O-O-O-O |
-        | B       | X-X-O-O-O-O-O-O |
-      Quand le client réserve 5 sièges sur le train express_2000
+        | A       | X-O-O-O         |
+        | B       | X-X-X-X-O-O-O-O |
+        | C       | X-O-O-O         |
+      Quand le client réserve 3 sièges sur le train local_1000
       Alors une référence de réservation est affectée au client
-      Et les places de la réservation sur le train express_2000 sont
+      Et les places de la réservation sur le train local_1000 sont
         | Sièges |
-        | 3B     |
-        | 4B     |
         | 5B     |
         | 6B     |
         | 7B     |
@@ -82,3 +80,20 @@ Fonctionnalité: Réserver des places sur un train de la compagnie
       Quand le client réserve 3 sièges sur le train local_1000
       Alors aucune référence de réservation n'est affectée au client
       Et aucun siège n'a été réservé sur le train local_1000
+
+  Règle: Pour un train dans son ensemble, pas plus de 70 % des sièges ne peuvent être réservés
+
+    Scénario: Une voiture dépasse 70% de sa capacité mais pas le train
+      Étant donné le train express_2000
+        | Voiture | Sièges          |
+        | A       | X-X-X-O-O-O-O-O |
+        | B       | X-X-O-O-O-O-O-O |
+      Quand le client réserve 5 sièges sur le train express_2000
+      Alors une référence de réservation est affectée au client
+      Et les places de la réservation sur le train express_2000 sont
+        | Sièges |
+        | 3B     |
+        | 4B     |
+        | 5B     |
+        | 6B     |
+        | 7B     |
