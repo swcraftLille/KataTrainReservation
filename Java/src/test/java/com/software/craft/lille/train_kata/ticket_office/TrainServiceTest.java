@@ -37,7 +37,8 @@ class TrainServiceTest {
   class ReserveTrainTests {
     @Test
     void reserveSeatsOnTrain_returnReservation_withBookingReferenceForTheRequestedTrainSeats() {
-      given(bookingReferenceClient.getBookingReference()).willReturn("booking reference");
+      given(bookingReferenceClient.getBookingReference())
+          .willReturn(ResponseEntity.ok("booking reference"));
       given(trainDataServiceClient.reserveSeats(anyString(), anyString(), anyString()))
           .willReturn(
               ResponseEntity.ok(
@@ -98,7 +99,8 @@ class TrainServiceTest {
     void
         reserveSeatsOnTrain_returnReservationWithoutBookingReference_whenResponseOKButBodyIsNotDataForTrain(
             String body) {
-      given(bookingReferenceClient.getBookingReference()).willReturn("booking reference");
+      given(bookingReferenceClient.getBookingReference())
+          .willReturn(ResponseEntity.ok("booking reference"));
       given(trainDataServiceClient.reserveSeats(anyString(), anyString(), anyString()))
           .willReturn(ResponseEntity.ok(body));
       final List<Seat> seatsToBook = List.of(new Seat("A", 1), new Seat("B", 2), new Seat("C", 1));
@@ -117,7 +119,8 @@ class TrainServiceTest {
         mode = EnumSource.Mode.MATCH_NONE)
     void reserveSeatsOnTrain_returnReservationWithoutBookingReference_whenReservationRequestFailed(
         HttpStatus status) {
-      given(bookingReferenceClient.getBookingReference()).willReturn("booking reference");
+      given(bookingReferenceClient.getBookingReference())
+          .willReturn(ResponseEntity.ok("booking reference"));
       given(trainDataServiceClient.reserveSeats(anyString(), anyString(), anyString()))
           .willReturn(
               ResponseEntity.status(status)

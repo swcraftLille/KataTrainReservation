@@ -6,7 +6,6 @@ import com.software.craft.lille.train_kata.api.external.model.TrainCompanyClient
 import com.software.craft.lille.train_kata.api.external.properties.BookingReferenceServiceProperties;
 import com.software.craft.lille.train_kata.api.external.properties.HttpClientProperties;
 import com.software.craft.lille.train_kata.api.external.properties.TrainDataServiceProperties;
-import java.io.IOException;
 import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +17,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
@@ -62,14 +62,16 @@ public class HttpClientsConfiguration {
     }
 
     private RestClient.ResponseSpec.ErrorHandler errorHandler(final JsonMapper jsonMapper) {
-        return (request, response) -> {
-            try (InputStream in = response.getBody()) {
-                final ProblemDetail problem = jsonMapper.readValue(in, ProblemDetail.class);
-                logger.error("HTTP error {} {}: {}", problem.getStatus(), problem.getTitle(), problem.getDetail());
-                throw new TrainCompanyClientException(request, problem);
-            } catch (IOException e) {
-                throw new TrainCompanyClientException(request, ProblemDetail.forStatus(response.getStatusCode()));
-            }
-        };
+    return (request, response) -> {
+      try (InputStream in = response.getBody()) {
+        final ProblemDetail problem = jsonMapper.readValue(in, ProblemDetail.class);
+        logger.error(
+            "HTTP error {} {}: {}", problem.getStatus(), problem.getTitle(), problem.getDetail());
+        throw new TrainCompanyClientException(request, problem);
+      } catch (JacksonException jacksonException) {
+        throw new TrainCompanyClientException(
+            request, ProblemDetail.forStatus(response.getStatusCode()));
+      }
+    };
     }
 }

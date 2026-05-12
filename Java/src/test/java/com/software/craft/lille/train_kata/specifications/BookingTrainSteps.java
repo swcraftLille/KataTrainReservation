@@ -65,11 +65,11 @@ public class BookingTrainSteps {
             }
             if (!seatToBookOnCoach.isEmpty()) {
                 try {
-                    final ResponseEntity<String> response =
-                            trainDataServiceClient.reserveSeats(
-                                    train.value(),
-                                    jsonMapper.writeValueAsString(seatToBookOnCoach),
-                                    bookingReferenceClient.getBookingReference());
+          final ResponseEntity<String> response =
+              trainDataServiceClient.reserveSeats(
+                  train.value(),
+                  jsonMapper.writeValueAsString(seatToBookOnCoach),
+                  bookingReferenceClient.getBookingReference().getBody());
                     if (response.getStatusCode().isError()) {
                         fail("La réservation sur la train '%s' a échouée".formatted(train.value()));
                     }

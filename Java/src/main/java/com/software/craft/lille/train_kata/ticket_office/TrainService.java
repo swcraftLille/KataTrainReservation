@@ -6,6 +6,8 @@ import static org.springframework.http.HttpStatus.OK;
 import com.software.craft.lille.train_kata.api.external.BookingReferenceClient;
 import com.software.craft.lille.train_kata.api.external.TrainDataServiceClient;
 import com.software.craft.lille.train_kata.api.external.model.DataForTrain;
+import com.software.craft.lille.train_kata.api.external.model.TrainCompanyClientException;
+import com.software.craft.lille.train_kata.ticket_office.exception.UnreachableData;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Reservation;
 import com.software.craft.lille.train_kata.ticket_office.reservation.Seat;
 import java.util.List;
@@ -20,66 +22,95 @@ import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class TrainService {
-    private static final Logger logger = LoggerFactory.getLogger(TrainService.class);
-    private final TrainDataServiceClient trainDataServiceClient;
-    private final BookingReferenceClient bookingReferenceClient;
-    private final JsonMapper jsonMapper;
+  private static final Logger logger = LoggerFactory.getLogger(TrainService.class);
+  private final TrainDataServiceClient trainDataServiceClient;
+  private final BookingReferenceClient bookingReferenceClient;
+  private final JsonMapper jsonMapper;
 
-    public TrainService(TrainDataServiceClient trainDataServiceClient, BookingReferenceClient bookingReferenceClient) {
-        this.trainDataServiceClient = trainDataServiceClient;
-        this.bookingReferenceClient = bookingReferenceClient;
-        jsonMapper = new JsonMapper();
+  public TrainService(
+      TrainDataServiceClient trainDataServiceClient,
+      BookingReferenceClient bookingReferenceClient) {
+    this.trainDataServiceClient = trainDataServiceClient;
+    this.bookingReferenceClient = bookingReferenceClient;
+    jsonMapper = new JsonMapper();
+  }
+
+  public Reservation reserveSeatsOnTrain(String trainId, List<Seat> seats) {
+    final String bookingReference = newBookingReference();
+    if (seatsHasBeenBooked(trainId, seats, bookingReference)) {
+      return new Reservation(trainId, seats, bookingReference);
     }
-
-    public Reservation reserveSeatsOnTrain(String trainId, List<Seat> seats) {
-        final String bookingReference = bookingReferenceClient.getBookingReference();
-        if (seatsHasBeenBooked(trainId, seats, bookingReference)) {
-            return new Reservation(trainId, seats, bookingReference);
-        }
     return new Reservation(trainId, List.of(), "");
-    }
+  }
 
-    public DataForTrain dataForTrain(String train) {
-        return asDataForTrain(() -> trainDataServiceClient.dataForTrain(train))
-                .orElseGet(DataForTrain::empty);
+  private String newBookingReference() {
+    try {
+      return bookingReferenceClient.getBookingReference().getBody();
+    } catch (TrainCompanyClientException trainCompanyClientException) {
+      throw new UnreachableData(
+          "Error calling booking reference service", trainCompanyClientException);
     }
+  }
 
-    private boolean seatsHasBeenBooked(String trainId, List<Seat> seats, String bookingReference) {
-        final String seatsToBook = jsonMapper.writeValueAsString(seats.stream()
-                .map(seat -> "%d%s".formatted(seat.seatNumber(), seat.coach()))
-                .toList());
-        return bookSeats(trainId, seatsToBook, bookingReference).isPresent();
-    }
+  public DataForTrain dataForTrain(String train) {
+    return asDataForTrain(() -> fetchTrainData(train)).orElseGet(DataForTrain::empty);
+  }
 
-    private Optional<DataForTrain> bookSeats(String trainId, String seatsToBook, String bookingReference) {
-        final Supplier<ResponseEntity<String>> reserveSeatsResponse = () -> trainDataServiceClient.reserveSeats(
-                trainId,
-                seatsToBook,
-                bookingReference);
-        return asDataForTrain(reserveSeatsResponse);
+  private ResponseEntity<String> fetchTrainData(String train) {
+    try {
+      return trainDataServiceClient.dataForTrain(train);
+    } catch (TrainCompanyClientException trainCompanyClientException) {
+      throw new UnreachableData("Error calling train service", trainCompanyClientException);
     }
+  }
 
-    private boolean reservationSucceed(ResponseEntity<String> response) {
-        return Boolean.logicalAnd(response.getStatusCode() == OK,
-                Optional.ofNullable(response.getBody()).filter(not(String::isBlank)).isPresent());
-    }
+  private boolean seatsHasBeenBooked(String trainId, List<Seat> seats, String bookingReference) {
+    final String seatsToBook =
+        jsonMapper.writeValueAsString(
+            seats.stream().map(seat -> "%d%s".formatted(seat.seatNumber(), seat.coach())).toList());
+    return bookSeats(trainId, seatsToBook, bookingReference).isPresent();
+  }
 
-    private Optional<DataForTrain> asDataForTrain(Supplier<ResponseEntity<String>> data) {
-        return Optional.ofNullable(data.get())
-                .filter(this::reservationSucceed)
-                .map(ResponseEntity::getBody)
-                .flatMap(this::readDataForTrain);
-    }
+  private Optional<DataForTrain> bookSeats(
+      String trainId, String seatsToBook, String bookingReference) {
+    final Supplier<ResponseEntity<String>> reserveSeatsResponse =
+        () -> sendReservationRequest(trainId, seatsToBook, bookingReference);
+    return asDataForTrain(reserveSeatsResponse);
+  }
 
-    private Optional<DataForTrain> readDataForTrain(String body) {
-        try {
-            return Optional.ofNullable(jsonMapper.readValue(body, DataForTrain.class));
-        } catch (JacksonException jacksonException) {
-            logger.warn("[{}] Impossible to get data from '{}'",
-                    getClass().getSimpleName(),
-                    body,
-                    jacksonException);
-            return Optional.empty();
-        }
+  private ResponseEntity<String> sendReservationRequest(
+      String trainId, String seatsToBook, String bookingReference) {
+    try {
+      return trainDataServiceClient.reserveSeats(trainId, seatsToBook, bookingReference);
+    } catch (TrainCompanyClientException trainCompanyClientException) {
+      throw new UnreachableData(
+          "Error sending reservation request to train service.", trainCompanyClientException);
     }
+  }
+
+  private boolean reservationSucceed(ResponseEntity<String> response) {
+    return Boolean.logicalAnd(
+        response.getStatusCode() == OK,
+        Optional.ofNullable(response.getBody()).filter(not(String::isBlank)).isPresent());
+  }
+
+  private Optional<DataForTrain> asDataForTrain(Supplier<ResponseEntity<String>> data) {
+    return Optional.ofNullable(data.get())
+        .filter(this::reservationSucceed)
+        .map(ResponseEntity::getBody)
+        .flatMap(this::readDataForTrain);
+  }
+
+  private Optional<DataForTrain> readDataForTrain(String body) {
+    try {
+      return Optional.ofNullable(jsonMapper.readValue(body, DataForTrain.class));
+    } catch (JacksonException jacksonException) {
+      logger.warn(
+          "[{}] Impossible to get data from '{}'",
+          getClass().getSimpleName(),
+          body,
+          jacksonException);
+      return Optional.empty();
+    }
+  }
 }
